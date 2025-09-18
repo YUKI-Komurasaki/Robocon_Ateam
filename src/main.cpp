@@ -7,8 +7,13 @@ CytronMD motorFL(PWM_DIR, 3, 4); //モータードライバのピン設定
 CytronMD motorFR(PWM_DIR, 3, 4);
 CytronMD motorRL(PWM_DIR, 3, 4);
 CytronMD motorRR(PWM_DIR, 3, 4);
+CytronMD D1(PWM_DIR,3,4);
+CytronMD D2(PWM_DIR,3,4);
+CytronMD D3(PWM_DIR,3,4);
+CytronMD D4(PWM_DIR,3,4);
+CytronMD D5(PWM_DIR,3,4);
 
-int RightStickX, RightStickY, LeftStickX, LeftStickY, LMoveAngle, RMoveAngle, DS;
+int LeftStickX, LeftStickY, LMoveAngle, DS;
 
 void setup() {
   Serial.begin(115200);
@@ -17,19 +22,19 @@ void setup() {
 }
 
 void loop() {
+  Ps4.update(); // Ps4.update() を呼び出すことで、コントローラーの状態を更新します
+
   if(PS4.isConnected()){
-    RightStickX = PS4.RStickX(); RightStickY = PS4.RStickY();
+
     LeftStickX = PS4.LStickX(); LeftStickY = PS4.LStickY();
     if(abs(LeftStickX) < 10){LeftStickX = 0;} //LStickのドリフト対策
     if(abs(LeftStickY) < 10){LeftStickY = 0;}
-    if(abs(RightStickX) < 10){RightStickX = 0;} //RStickのドリフト対策
-    if(abs(RightStickY) < 10){RightStickY = 0;}
     LMoveAngle = (180 /PI) * atan2(double (LeftStickX), double (-1 * LeftStickY)); //ロボット座標系で角度を計算（-180~180）
-    RMoveAngle = (180 /PI) * atan2(double (RightStickX), double (-1 * RightStickY)); //RStickの傾けた方向の角度を計算（-180~180）
     if(PS4.L3()){
       if(DS == 0){DS = 64;}
-      else if(DSmode == 64){DSmode = 0;}
+      else{DSmode = 0;}
     }
+
     if(LeftStickX + LeftStickY != 0){
       if(LMoveAngle < -157){
         motorFL.setSpeed(-128 + DS)
@@ -105,6 +110,71 @@ void loop() {
         motorRR.setSpeed(0);
       }
     }
+
+    // ○ボタンが押されたとき (右回転)
+    if (PS4.Circle()){
+      Serial.println("Circle button pressed - Forward");
+      int turn_speed=100;
+      D1.setSpeed(turn_speed);
+      D2.setSpeed(turn_speed);
+      Serial.println("右回転");
+    }
+    // □ボタンが押されたとき (左回転)
+    if (PS4.Square()) {
+      Serial.println("Square button pressed - Reverse");
+      int turn_speed=100;
+      D1.setSpeed(-turn_speed);
+      D2.setSpeed(-turn_speed);
+      Serial.println("左回転");
+    }
+    // ---  十字ボタンの↑と↓で制御 （ハンドの上昇機構）---
+    if (PS4.Up()){
+      Serial.println("up button pressed - Forward");
+      int turn_speed=100;
+      D3.setSpeed(turn_speed);
+      Serial.println("右回転");
+    }
+    if (PS4.Down()) {
+      Serial.println("down button pressed - Reverse");
+      int turn_speed=100;
+      D3.setSpeed(-turn_speed);
+      Serial.println("左回転");
+    }
+    // --- 十字ボタンの→と←で制御 （前後移動）---
+    if (PS4.Right()){
+      Serial.println("Right Button pressed - Forward");
+      int turn_speed=100;
+      D4.setSpeed(turn_speed);
+      Serial.println("右回転");
+    }
+    if (PS4.Left()){
+      Serial.println("Left Button pressed - Reverse");
+      int turn_speed=100;
+      D4.setSpeed(-turn_speed);
+      Serial.println("左回転");
+    } 
+    //ハンド：L1で右回転、R1で左回転
+    if (PS4.L1()){
+      Serial.println("L1 Button pressed - Forward");
+      int turn_speed=10;
+      D5.setSpeed(turn_speed);
+      Serial.println("右回転");
+    } 
+    if (PS4.R1()) {
+      Serial.println("R1 Button pressed - Reverse");
+      int turn_speed=10;
+      D5.setSpeed(-turn_speed);
+      Serial.println("左回転");
+    }
+    // いずれかのボタンが離されたとき
+    else if (Ps4.event.button_up.circle || Ps4.event.button_up.square) {
+      Serial.println("Button released - Stop");
+            
+      // モーターを停止
+      analogWrite(MOTOR1_PWM, 0);
+      analogWrite(MOTOR2_PWM, 0);
+    }
+    delay(50);
   }
   return 0;
 } //スパゲッティーコードすぎて萎え
