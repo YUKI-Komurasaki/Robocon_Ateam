@@ -174,7 +174,8 @@ void loop() {
       analogWrite(MOTOR1_PWM, 0);
       analogWrite(MOTOR2_PWM, 0);
     }
-    delay(50);
+  
   }
+  delay(50);
   return 0;
 } //スパゲッティーコードすぎて萎え
