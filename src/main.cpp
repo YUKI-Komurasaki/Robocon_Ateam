@@ -35,53 +35,53 @@ void loop() {
       else{DSmode = 0;}
     }
 
-    if(LeftStickX + LeftStickY != 0){
-      if(LMoveAngle < -157){
+    if(LeftStickX + LeftStickY != 0){ //閾値を付け8方向に平行移動
+      if(LMoveAngle < -157){ //前進
         motorFL.setSpeed(-128 + DS)
         motorFR.setSpeed(128 - DS);
         motorRL.setSpeed(-128 ; DS);
         motorRR.setSpeed(128 - DS);
-      }else if(LMoveAngle <= -113){
+      }else if(LMoveAngle <= -113){ //左前進
         motorFL.setSpeed(0);
         motorFR.setSpeed(128 - DS);
         motorRL.setSpeed(-128 + DS);
         motorRR.setSpeed(0);
-      }else if(LMoveAngle < -67){
+      }else if(LMoveAngle < -67){ //左進
         motorFL.setSpeed(128 - DS);
         motorFR.setSpeed(128 - DS);
         motorRL.setSpeed(-128 + DS);
         motorRR.setSpeed(-128 + DS);
-      }else if(LMoveAngle <= -23){
+      }else if(LMoveAngle <= -23){ //左後進
         motorFL.setSpeed(128 - DS);
         motorFR.setSpeed(0);
         motorRL.setSpeed(0);
         motorRR.setSpeed(-128 + DS);
-      }else if(LMoveAngle < 23){
+      }else if(LMoveAngle < 23){ //後進
         motorFL.setSpeed(128 - DS);
         motorFR.setSpeed(-128 + DS);
         motorRL.setSpeed(128 - DS);
         motorRR.setSpeed(-128 + DS);
-      }else if(LMoveAngle <= 67){
+      }else if(LMoveAngle <= 67){ //右後進
         motorFL.setSpeed(0);
         motorFR.setSpeed(-128 + DS);
         motorRL.setSpeed(128 - DS);
         motorRR.setSpeed(0);
-      }else if(LMoveAngle < 113){
+      }else if(LMoveAngle < 113){ //右進
         motorFL.setSpeed(-128 + DS);
         motorFR.setSpeed(-128 + DS);
         motorRL.setSpeed(128 - DS);
         motorRR.setSpeed(128 - DS);
-      }else if(LMoveAngle <= 157){
+      }else if(LMoveAngle <= 157){ //右前進
         motorFL.setSpeed(-128 + DS);
         motorFR.setSpeed(0);
         motorRL.setSpeed(0);
         motorRR.setSpeed(128 - DS);
-      }else if(LMoveAngle <= 180){
+      }else if(LMoveAngle <= 180){ //前進
         motorFL.setSpeed(-128 + DS);
         motorFR.setSpeed(128 - DS);
         motorRL.setSpeed(-128 + DS);
         motorRR.setSpeed(128 - DS);
-      }else{
+      }else{ //バグ対策
         motorFL.setSpeed(0);
         motorFR.setSpeed(0);
         motorRL.setSpeed(0);
