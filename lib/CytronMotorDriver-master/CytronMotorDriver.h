@@ -2,43 +2,20 @@
 #define CYTRON_MOTOR_DRIVER_H
 
 #include <Arduino.h>
-#include <stdint.h>
-
-
 
 enum MODE {
   PWM_DIR,
-  PWM_PWM,
+  PWM_PWM  // 今回は使いませんが定義だけ残しておきます
 };
 
-
-
-class CytronMD
-{
+class CytronMD {
   public:
-    CytronMD(MODE mode, uint8_t pin1, uint8_t pin2);
+    CytronMD(MODE mode, uint8_t pwmPin, uint8_t dirPin, uint8_t pwmChannel);
     void setSpeed(int16_t speed);
-    
-  protected:
+
+  private:
     MODE _mode;
-  	uint8_t _pin1;
-    uint8_t _pin2;
+    uint8_t _pwmPin, _dirPin, _pwmChannel;
 };
-
-
-
-/* class CytronMD10C : public CytronMD
-{
-  public:
-    CytronMD10C(uint8_t pwmPin, uint8_t dirPin) : CytronMD(PWM_DIR, pwmPin, dirPin) {};
-};
-
-
-
-class CytronMD13S : public CytronMD
-{
-  public:
-    CytronMD13S(uint8_t pwmPin, uint8_t dirPin) : CytronMD(PWM_DIR, pwmPin, dirPin) {};
-}; */
 
 #endif
