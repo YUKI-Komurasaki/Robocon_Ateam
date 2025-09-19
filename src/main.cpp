@@ -3,10 +3,10 @@
 #include <CytronMotorDriver.h>
 #include <math.h>
 
-CytronMD motorFL(PWM_DIR, 3, 4); //モータードライバのピン設定
-CytronMD motorFR(PWM_DIR, 3, 4);
-CytronMD motorRL(PWM_DIR, 3, 4);
-CytronMD motorRR(PWM_DIR, 3, 4);
+CytronMD motorFL(PWM_DIR, 33, 32); //モータードライバのピン設定
+CytronMD motorFR(PWM_DIR, 35, 34);
+CytronMD motorRL(PWM_DIR, 16, 17);
+CytronMD motorRR(PWM_DIR, 5, 18);
 CytronMD motorFD(PWM_DIR,3,4);
 CytronMD motorHL(PWM_DIR,3,4);
 CytronMD motorHP(PWM_DIR,3,4);
