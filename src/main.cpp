@@ -11,24 +11,15 @@ const int DASH_INCREMENT = 64;   // ダッシュ速度の増分
 const int DEADZONE = 10;         // ジョイスティックのドリフト対策
 
 // --- モーター定義 ---
-//CytronMD motorFL(PWM_DIR, 33, 32);
-//CytronMD motorFR(PWM_DIR, 35, 34);
-//CytronMD motorRL(PWM_DIR, 16, 17);
-//CytronMD motorRR(PWM_DIR, 5, 18);
-CytronMD motorFL((MODE)PWM_DIR, 33, 32, 0);
-CytronMD motorFR((MODE)PWM_DIR, 35, 34, 1);
-CytronMD motorRL((MODE)PWM_DIR, 16, 17, 2);
-CytronMD motorRR((MODE)PWM_DIR, 5, 18, 3);
+CytronMD motorFL((MODE)PWM_DIR, 33, 32, 0); // 左前
+CytronMD motorFR((MODE)PWM_DIR, 35, 34, 1); // 右前
+CytronMD motorRL((MODE)PWM_DIR, 16, 17, 2); // 左後
+CytronMD motorRR((MODE)PWM_DIR, 5, 18, 3); // 右後
 
-/*
- * 【重要】以下の4つのモーターは、それぞれ異なる物理ピンに接続し、
- * 実際の配線に合わせてピン番号を変更してください。
- * (下記のピン番号はあくまで重複を避けるための仮設定です)
- */
-CytronMD motorFD(PWM_DIR, 2, 15, 4);   // 土台上下
-CytronMD motorHL(PWM_DIR, 19, 21, 5);  // ハンド上下
-CytronMD motorHP(PWM_DIR, 22, 23, 6);  // ハンド前後（台）
-CytronMD motorHG(PWM_DIR, 25, 26, 7);  // グリッパー開閉
+CytronMD motorFD(PWM_DIR, 23, 22, 4);   // 土台上下
+CytronMD motorHL(PWM_DIR, 21, 19, 5);  // ハンド上下
+CytronMD motorHP(PWM_DIR, 1, 3, 6);  // ハンド前後（台）
+CytronMD motorHG(PWM_DIR, 36, 39, 7);  // グリッパー開閉
 
 // --- 変数 ---
 int LeftStickX = 0, LeftStickY = 0;
