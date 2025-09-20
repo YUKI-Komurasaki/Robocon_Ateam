@@ -11,20 +11,20 @@ const int DEADZONE = 10;
 // 左前
 const int FL_PWM = 33, FL_DIR = 32, FL_CH = 0;
 // 右前
-const int FR_PWM = 35, FR_DIR = 34, FR_CH = 1;
+const int FR_PWM = 12, FR_DIR = 14, FR_CH = 1;
 // 左後
 const int RL_PWM = 16, RL_DIR = 17, RL_CH = 2;
 // 右後
-const int RR_PWM = 18,  RR_DIR = 5, RR_CH = 3;
+const int RR_PWM = 5,  RR_DIR = 18, RR_CH = 3;
 
 // 土台上下
-const int FD_PWM = 22, FD_DIR = 23, FD_CH = 4;
+const int FD_PWM = 26, FD_DIR = 19, FD_CH = 4;
 // ハンド上下
-const int HL_PWM = 21, HL_DIR = 19, HL_CH = 5;
+const int HL_PWM = 4, HL_DIR = 2, HL_CH = 5;
 // ハンド前後
-const int HP_PWM = 3,  HP_DIR = 1,  HP_CH = 6;
+const int HP_PWM = 21,  HP_DIR = 25,  HP_CH = 6;
 // グリッパー開閉
-const int HG_PWM = 39, HG_DIR = 19, HG_CH = 7;
+const int HG_PWM = 23, HG_DIR = 22, HG_CH = 7;
 
 // --- 変数 ---
 int LeftStickX = 0, LeftStickY = 0;
@@ -90,9 +90,9 @@ void controlHandVertical() {
   if (PS4.Up() && PS4.Down()) {
     setMotor(HL_PWM, HL_DIR, HL_CH, 0);
   } else if (PS4.Up()) {
-    setMotor(HL_PWM, HL_DIR, HL_CH, BASE_SPEED);
+    setMotor(HL_PWM, HL_DIR, HL_CH, BASE_SPEED - 60);
   } else if (PS4.Down()) {
-    setMotor(HL_PWM, HL_DIR, HL_CH, -BASE_SPEED);
+    setMotor(HL_PWM, HL_DIR, HL_CH, -BASE_SPEED - 60);
   } else {
     setMotor(HL_PWM, HL_DIR, HL_CH, 0);
   }
@@ -116,9 +116,9 @@ void controlGripper() {
   if (PS4.L2() && PS4.R2()) {
     setMotor(HG_PWM, HG_DIR, HG_CH, 0);
   } else if (PS4.L2()) {
-    setMotor(HG_PWM, HG_DIR, HG_CH, BASE_SPEED / 10);
+    setMotor(HG_PWM, HG_DIR, HG_CH, BASE_SPEED / 15);
   } else if (PS4.R2()) {
-    setMotor(HG_PWM, HG_DIR, HG_CH, -BASE_SPEED / 10);
+    setMotor(HG_PWM, HG_DIR, HG_CH, -BASE_SPEED / 15);
   } else {
     setMotor(HG_PWM, HG_DIR, HG_CH, 0);
   }
