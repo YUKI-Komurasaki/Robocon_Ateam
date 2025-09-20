@@ -3,10 +3,15 @@
 #include "CytronMotorDriver.h"
 
 // モーターインスタンス：PWM, DIR, チャンネル番号
-CytronMD motorFL(PWM_DIR, 33, 32, 0);
-CytronMD motorFR(PWM_DIR, 35, 34, 1);
-CytronMD motorRL(PWM_DIR, 16, 17, 2);
-CytronMD motorRR(PWM_DIR, 5, 18, 3);
+CytronMD motorFL((MODE)PWM_DIR, 33, 32, 0); // 左前
+CytronMD motorFR((MODE)PWM_DIR, 35, 34, 1); // 右前
+CytronMD motorRL((MODE)PWM_DIR, 16, 17, 2); // 左後
+CytronMD motorRR((MODE)PWM_DIR, 5, 18, 3); // 右後
+
+CytronMD motorFD((MODE)PWM_DIR, 23, 22, 4);   // 土台上下
+CytronMD motorHL((MODE)PWM_DIR, 21, 19, 5);  // ハンド上下
+CytronMD motorHP((MODE)PWM_DIR, 1, 3, 6);  // ハンド前後（台）
+CytronMD motorHG((MODE)PWM_DIR, 36, 39, 7);  // グリッパー開閉
 
 // 動作確認
 void setup() {
@@ -16,26 +21,13 @@ void setup() {
 }
 
 void loop() {
-  if (PS4.isConnected()) {
-    int y = PS4.LStickY();
+  Serial.begin(115200);
 
-    // 停止
-    if (abs(y) < 10) {
-      motorFL.setSpeed(0);
-      motorFR.setSpeed(0);
-      motorRL.setSpeed(0);
-      motorRR.setSpeed(0);
-      return;
-    }
+  motorHP.setSpeed(20);
+  delay(500);
 
-    int speed = map(abs(y), 0, 127, 0, 255);
-    speed = (y < 0) ? -speed : speed;
+  motorHP.setSpeed(-20);
+  delay(500);
 
-    motorFL.setSpeed(speed);
-    motorFR.setSpeed(speed);
-    motorRL.setSpeed(speed);
-    motorRR.setSpeed(speed);
-  }
-
-  delay(20);
+  motorHP.setSpeed(0);
 }
