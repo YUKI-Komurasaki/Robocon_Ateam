@@ -18,7 +18,7 @@ const int RL_PWM = 16, RL_DIR = 17, RL_CH = 2;
 const int RR_PWM = 5,  RR_DIR = 18, RR_CH = 3;
 
 // 土台上下
-const int FD_PWM = 26, FD_DIR = 19, FD_CH = 4;
+const int FD_PWM = 26, FD_DIR = 27, FD_CH = 4;
 // ハンド上下
 const int HL_PWM = 4, HL_DIR = 2, HL_CH = 5;
 // ハンド前後
@@ -35,15 +35,30 @@ bool l3_was_pressed = false;
 // --- モーター制御関数（ESP32用） ---
 void setMotor(int pwmPin, int dirPin, int channel, int speed) {
   bool direction = speed >= 0;
+
+  pinMode(dirPin, OUTPUT);  // 念のため再宣言
   digitalWrite(dirPin, direction ? HIGH : LOW);
   ledcWrite(channel, abs(speed));
 }
 
-// --- まとめて初期化 ---
+// --- 初期化 ---
 void setupMotor(int pwmPin, int dirPin, int channel) {
   pinMode(dirPin, OUTPUT);
-  ledcSetup(channel, 1000, 8);  // 周波数:1000Hz, 分解能:8bit
+  ledcSetup(channel, 1000, 8);  // 1000Hz, 8bit PWM
   ledcAttachPin(pwmPin, channel);
+}
+
+// --- 全停止 ---
+void stopAllMotors() {
+  setMotor(FL_PWM, FL_DIR, FL_CH, 0);
+  setMotor(FR_PWM, FR_DIR, FR_CH, 0);
+  setMotor(RL_PWM, RL_DIR, RL_CH, 0);
+  setMotor(RR_PWM, RR_DIR, RR_CH, 0);
+
+  setMotor(FD_PWM, FD_DIR, FD_CH, 0);
+  setMotor(HL_PWM, HL_DIR, HL_CH, 0);
+  setMotor(HP_PWM, HP_DIR, HP_CH, 0);
+  setMotor(HG_PWM, HG_DIR, HG_CH, 0);
 }
 
 // --- 初期化 ---
@@ -52,16 +67,17 @@ void setup() {
   PS4.begin("1a:2b:3c:01:01:02");
   Serial.println("Ready.");
 
-  // 全モーター初期化
+  // モーター初期化
   setupMotor(FL_PWM, FL_DIR, FL_CH);
   setupMotor(FR_PWM, FR_DIR, FR_CH);
   setupMotor(RL_PWM, RL_DIR, RL_CH);
   setupMotor(RR_PWM, RR_DIR, RR_CH);
-
   setupMotor(FD_PWM, FD_DIR, FD_CH);
   setupMotor(HL_PWM, HL_DIR, HL_CH);
   setupMotor(HP_PWM, HP_DIR, HP_CH);
   setupMotor(HG_PWM, HG_DIR, HG_CH);
+
+  stopAllMotors();  // 安全のため全停止
 }
 
 // --- 走行用モーター制御 ---
@@ -127,7 +143,6 @@ void controlGripper() {
 // --- メインループ ---
 void loop() {
   if (PS4.isConnected()) {
-
     LeftStickX = PS4.LStickX();
     LeftStickY = PS4.LStickY();
 
@@ -144,34 +159,32 @@ void loop() {
 
     // 移動処理
     if (LeftStickX != 0 || LeftStickY != 0) {
-      if (LMoveAngle < -157 || LMoveAngle > 157) {
+      if (LMoveAngle < -157 || LMoveAngle > 157)
         controlMotors(currentSpeed, -currentSpeed, currentSpeed, -currentSpeed); // 前進
-      } else if (LMoveAngle <= -113) {
+      else if (LMoveAngle <= -113)
         controlMotors(0, -currentSpeed, currentSpeed, 0); // 左前
-      } else if (LMoveAngle < -67) {
+      else if (LMoveAngle < -67)
         controlMotors(-currentSpeed, -currentSpeed, currentSpeed, currentSpeed); // 左
-      } else if (LMoveAngle <= -23) {
+      else if (LMoveAngle <= -23)
         controlMotors(-currentSpeed, 0, 0, currentSpeed); // 左後
-      } else if (LMoveAngle < 23) {
+      else if (LMoveAngle < 23)
         controlMotors(-currentSpeed, currentSpeed, -currentSpeed, currentSpeed); // 後進
-      } else if (LMoveAngle <= 67) {
+      else if (LMoveAngle <= 67)
         controlMotors(0, currentSpeed, -currentSpeed, 0); // 右後
-      } else if (LMoveAngle < 113) {
+      else if (LMoveAngle < 113)
         controlMotors(currentSpeed, currentSpeed, -currentSpeed, -currentSpeed); // 右
-      } else if (LMoveAngle <= 157) {
+      else if (LMoveAngle <= 157)
         controlMotors(currentSpeed, 0, 0, -currentSpeed); // 右前
-      }
     } else {
       // 回転処理
-      if (PS4.L1() && PS4.R1()) {
+      if (PS4.L1() && PS4.R1())
         controlMotors(0, 0, 0, 0);
-      } else if (PS4.L1()) {
+      else if (PS4.L1())
         controlMotors(currentSpeed, -currentSpeed, currentSpeed, -currentSpeed); // 左回転
-      } else if (PS4.R1()) {
+      else if (PS4.R1())
         controlMotors(-currentSpeed, currentSpeed, -currentSpeed, currentSpeed); // 右回転
-      } else {
+      else
         controlMotors(0, 0, 0, 0);  // 停止
-      }
     }
 
     // 補機制御
@@ -179,6 +192,8 @@ void loop() {
     controlHandVertical();
     controlHandForward();
     controlGripper();
+  } else {
+    stopAllMotors();  // PS4未接続時の全停止
   }
 
   delay(20);
