@@ -47,10 +47,10 @@ void controlPlatform() {
     motorFD.setSpeed(0);
     Serial.println("土台 停止");
   } else if (PS4.Triangle()) {
-    motorFD.setSpeed(BASE_SPEED);
+    motorFD.setSpeed(BASE_SPEED - 60);
     Serial.println("土台 上昇");
   } else if (PS4.Cross()) {
-    motorFD.setSpeed(-BASE_SPEED);
+    motorFD.setSpeed(-BASE_SPEED + 60);
     Serial.println("土台 下降");
   } else {
     motorFD.setSpeed(0);
@@ -126,21 +126,21 @@ void loop() {
     // --- 移動処理 ---
     if (LeftStickX != 0 || LeftStickY != 0) {
       if (LMoveAngle < -157 || LMoveAngle > 157) {  // 前進
-        controlMotors(-currentSpeed, currentSpeed, -currentSpeed, currentSpeed);
-      } else if (LMoveAngle <= -113) {  // 左前
-        controlMotors(0, currentSpeed, -currentSpeed, 0);
-      } else if (LMoveAngle < -67) {  // 左
-        controlMotors(currentSpeed, currentSpeed, -currentSpeed, -currentSpeed);
-      } else if (LMoveAngle <= -23) {  // 左後
-        controlMotors(currentSpeed, 0, 0, -currentSpeed);
-      } else if (LMoveAngle < 23) {  // 後進
         controlMotors(currentSpeed, -currentSpeed, currentSpeed, -currentSpeed);
-      } else if (LMoveAngle <= 67) {  // 右後
+      } else if (LMoveAngle <= -113) {  // 左前
         controlMotors(0, -currentSpeed, currentSpeed, 0);
-      } else if (LMoveAngle < 113) {  // 右
+      } else if (LMoveAngle < -67) {  // 左
         controlMotors(-currentSpeed, -currentSpeed, currentSpeed, currentSpeed);
-      } else if (LMoveAngle <= 157) {  // 右前
+      } else if (LMoveAngle <= -23) {  // 左後
         controlMotors(-currentSpeed, 0, 0, currentSpeed);
+      } else if (LMoveAngle < 23) {  // 後進
+        controlMotors(-currentSpeed, currentSpeed, -currentSpeed, currentSpeed);
+      } else if (LMoveAngle <= 67) {  // 右後
+        controlMotors(0, currentSpeed, -currentSpeed, 0);
+      } else if (LMoveAngle < 113) {  // 右
+        controlMotors(currentSpeed, currentSpeed, -currentSpeed, -currentSpeed);
+      } else if (LMoveAngle <= 157) {  // 右前
+        controlMotors(currentSpeed, 0, 0, -currentSpeed);
       }
     } else {
       // --- ★修正点: 回転処理 ---
@@ -148,10 +148,10 @@ void loop() {
         controlMotors(0, 0, 0, 0);  // 停止
       } else if (PS4.L1()) {
         // 左回転 (反時計回り)
-        controlMotors(-currentSpeed, currentSpeed, -currentSpeed, currentSpeed);
+        controlMotors(currentSpeed, -currentSpeed, currentSpeed, -currentSpeed);
       } else if (PS4.R1()) {
         // 右回転 (時計回り)
-        controlMotors(currentSpeed, -currentSpeed, currentSpeed, -currentSpeed);
+        controlMotors(-currentSpeed, currentSpeed, -currentSpeed, currentSpeed);
       } else {
         controlMotors(0, 0, 0, 0);  // 停止
       }
