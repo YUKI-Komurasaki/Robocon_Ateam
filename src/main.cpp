@@ -20,7 +20,7 @@ const int RL_PWM = 16, RL_DIR = 17, RL_CH = 2;
 const int RR_PWM = 5,  RR_DIR = 18, RR_CH = 3;
 
 // 土台上下
-const int FD_PWM = 26, FD_DIR = 19, FD_CH = 4;  // DIR=GPIO19, PWM=GPIO26
+const int FD_PWM = 26, FD_DIR = 19, FD_CH = 4;
 // ハンド上下
 const int HL_PWM = 4, HL_DIR = 2, HL_CH = 5;
 // ハンド前後
@@ -33,7 +33,7 @@ const bool FL_INVERT = true;
 const bool FR_INVERT = false;
 const bool RL_INVERT = true;
 const bool RR_INVERT = false;
-const bool FD_INVERT = false; // 修正済み（△で上昇、×で下降）
+const bool FD_INVERT = false; // △で上昇、×で下降
 
 // --- 変数 ---
 int currentSpeedDrive = BASE_SPEED_DRIVE;
@@ -110,6 +110,7 @@ void controlPlatform(){
   else setMotor(FD_PWM,FD_DIR,FD_CH,0,FD_INVERT);
 }
 
+// --- ハンド上下 ---
 void controlHandVertical(){
   if(PS4.Up()&&PS4.Down()) setMotor(HL_PWM,HL_DIR,HL_CH,0);
   else if(PS4.Up()) setMotor(HL_PWM,HL_DIR,HL_CH,currentSpeedAccessory-60);
@@ -117,17 +118,19 @@ void controlHandVertical(){
   else setMotor(HL_PWM,HL_DIR,HL_CH,0);
 }
 
+// --- ハンド前後 ---
 void controlHandForward(){
   int ry=-PS4.RStickY();
   if(abs(ry)<DEADZONE) setMotor(HP_PWM,HP_DIR,HP_CH,0);
   else setMotor(HP_PWM,HP_DIR,HP_CH,(ry/128.0)*currentSpeedAccessory);
 }
 
+// --- グリッパー（ゆっくり小刻み操作） ---
 void controlGripper(){
-  if(PS4.L2()&&PS4.R2()) setMotor(HG_PWM,HG_DIR,HG_CH,0);
-  else if(PS4.L2()) setMotor(HG_PWM,HG_DIR,HG_CH,currentSpeedAccessory/15);
-  else if(PS4.R2()) setMotor(HG_PWM,HG_DIR,HG_CH,-currentSpeedAccessory/15);
-  else setMotor(HG_PWM,HG_DIR,HG_CH,0);
+  if(PS4.L2() && PS4.R2()) setMotor(HG_PWM, HG_DIR, HG_CH, 0);
+  else if(PS4.L2()) setMotor(HG_PWM, HG_DIR, HG_CH, currentSpeedAccessory / 40);   // 閉じる
+  else if(PS4.R2()) setMotor(HG_PWM, HG_DIR, HG_CH, -currentSpeedAccessory / 40);  // 開く
+  else setMotor(HG_PWM, HG_DIR, HG_CH, 0);
 }
 
 // --- セットアップ ---
@@ -149,8 +152,8 @@ void setup(){
 // --- メインループ ---
 void loop(){
   if(PS4.isConnected()){
-    if(PS4.L3()&&!l3_was_pressed){
-      currentSpeedDrive=(currentSpeedDrive==BASE_SPEED_DRIVE)?(BASE_SPEED_DRIVE+DASH_INCREMENT):BASE_SPEED_DRIVE;
+    if(PS4.L3() && !l3_was_pressed){
+      currentSpeedDrive=(currentSpeedDrive==BASE_SPEED_DRIVE) ? (BASE_SPEED_DRIVE+DASH_INCREMENT) : BASE_SPEED_DRIVE;
     }
     l3_was_pressed=PS4.L3();
     controlDrive();
