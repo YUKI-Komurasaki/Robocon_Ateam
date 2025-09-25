@@ -4,9 +4,9 @@
 
 // --- 定数 ---
 const int BASE_SPEED_DRIVE = 128;
-const int DASH_INCREMENT = 64;
 int currentSpeedAccessory = 100;
-const int DEADZONE = 15;
+const int DEADZONE = 30;
+const float SMOOTHING = 0.2;  // 足回り・補機共通スムージング係数
 
 // --- モーター用ピン ---
 const int FL_PWM = 33, FL_DIR = 32, FL_CH = 0;
@@ -26,8 +26,16 @@ const bool RR_INVERT = false;
 const bool FD_INVERT = false;
 const bool HP_INVERT = false;
 
-// --- 足回りスムージング変数 ---
+// --- 足回りスピード ---
 int currentSpeedDrive = BASE_SPEED_DRIVE;
+
+// --- スムージング用変数 ---
+float currentFL=0, currentFR=0, currentRL=0, currentRR=0;
+float targetFL=0, targetFR=0, targetRL=0, targetRR=0;
+float currentFD=0, targetFD=0;
+float currentHL=0, targetHL=0;
+float currentHP=0, targetHP=0;
+float currentHG=0, targetHG=0;
 
 // --- モーター初期化 ---
 void setupMotor(int pwmPin, int dirPin, int channel){
@@ -37,12 +45,19 @@ void setupMotor(int pwmPin, int dirPin, int channel){
   ledcWrite(channel, 0);
 }
 
-// --- モーター制御 ---
+// --- PWM制御関数 ---
 void setMotor(int pwmPin, int dirPin, int channel, float speed, bool invert=false){
   if(invert) speed = -speed;
-  bool direction = speed >= 0;
-  digitalWrite(dirPin, direction ? HIGH : LOW);
+  if(speed > 255) speed = 255;
+  if(speed < -255) speed = -255;
+  bool dir = speed >= 0;
+  digitalWrite(dirPin, dir ? HIGH : LOW);
   ledcWrite(channel, (int)abs(speed));
+}
+
+// --- スムージング関数 ---
+float smoothSpeed(float current, float target){
+  return current + (target - current) * SMOOTHING;
 }
 
 // --- 足回りタスク ---
@@ -62,10 +77,15 @@ void driveTask(void* pvParameters){
       rl = (vy-vx+vr)*currentSpeedDrive;
       rr = (vy+vx-vr)*currentSpeedDrive;
     }
-    setMotor(FL_PWM,FL_DIR,FL_CH,fl,FL_INVERT);
-    setMotor(FR_PWM,FR_DIR,FR_CH,fr,FR_INVERT);
-    setMotor(RL_PWM,RL_DIR,RL_CH,rl,RL_INVERT);
-    setMotor(RR_PWM,RR_DIR,RR_CH,rr,RR_INVERT);
+    targetFL=fl; targetFR=fr; targetRL=rl; targetRR=rr;
+    currentFL=smoothSpeed(currentFL,targetFL);
+    currentFR=smoothSpeed(currentFR,targetFR);
+    currentRL=smoothSpeed(currentRL,targetRL);
+    currentRR=smoothSpeed(currentRR,targetRR);
+    setMotor(FL_PWM,FL_DIR,FL_CH,currentFL,FL_INVERT);
+    setMotor(FR_PWM,FR_DIR,FR_CH,currentFR,FR_INVERT);
+    setMotor(RL_PWM,RL_DIR,RL_CH,currentRL,RL_INVERT);
+    setMotor(RR_PWM,RR_DIR,RR_CH,currentRR,RR_INVERT);
     vTaskDelay(20/portTICK_PERIOD_MS);
   }
 }
@@ -73,13 +93,15 @@ void driveTask(void* pvParameters){
 // --- 土台上下タスク ---
 void platformTask(void* pvParameters){
   for(;;){
-    float speed = 0;
+    float speed=0;
     if(PS4.isConnected()){
-      if(PS4.Triangle() && PS4.Cross()) speed = 0;
-      else if(PS4.Triangle()) speed = currentSpeedAccessory;
-      else if(PS4.Cross()) speed = -currentSpeedAccessory;
+      if(PS4.Triangle() && PS4.Cross()) speed=0;
+      else if(PS4.Triangle()) speed=currentSpeedAccessory;
+      else if(PS4.Cross()) speed=-currentSpeedAccessory;
     }
-    setMotor(FD_PWM,FD_DIR,FD_CH,speed,FD_INVERT);
+    targetFD=speed;
+    currentFD=smoothSpeed(currentFD,targetFD);
+    setMotor(FD_PWM,FD_DIR,FD_CH,currentFD,FD_INVERT);
     vTaskDelay(20/portTICK_PERIOD_MS);
   }
 }
@@ -87,26 +109,31 @@ void platformTask(void* pvParameters){
 // --- ハンド上下タスク ---
 void handVerticalTask(void* pvParameters){
   for(;;){
-    float speed = 0;
+    float speed=0;
     if(PS4.isConnected()){
-      if(PS4.Up() && PS4.Down()) speed = 0;
-      else if(PS4.Up()) speed = -currentSpeedAccessory+60;
-      else if(PS4.Down()) speed = currentSpeedAccessory-60;
+      if(PS4.Up() && PS4.Down()) speed=0;
+      else if(PS4.Up()) speed=-currentSpeedAccessory;
+      else if(PS4.Down()) speed=currentSpeedAccessory;
     }
-    setMotor(HL_PWM,HL_DIR,HL_CH,speed);
+    targetHL=speed;
+    currentHL=smoothSpeed(currentHL,targetHL);
+    setMotor(HL_PWM,HL_DIR,HL_CH,currentHL);
     vTaskDelay(20/portTICK_PERIOD_MS);
   }
 }
 
-// --- ハンド前後タスク（シンプル版） ---
+// --- ハンド前後タスク ---
 void handForwardTask(void* pvParameters){
   for(;;){
-    float speed = 0;
+    float speed=0;
     if(PS4.isConnected()){
-      int ry = PS4.RStickY();
-      if(abs(ry) >= 25) speed = (float)ry/128.0*currentSpeedAccessory;
+      int ry=PS4.RStickY();
+      if(abs(ry)<20) speed=0;
+      else speed=-(float)ry/128.0*currentSpeedAccessory;
     }
-    setMotor(HP_PWM,HP_DIR,HP_CH,speed, HP_INVERT);
+    targetHP=speed;
+    currentHP=smoothSpeed(currentHP,targetHP);
+    setMotor(HP_PWM,HP_DIR,HP_CH,currentHP,HP_INVERT);
     vTaskDelay(20/portTICK_PERIOD_MS);
   }
 }
@@ -114,13 +141,15 @@ void handForwardTask(void* pvParameters){
 // --- グリッパータスク ---
 void gripperTask(void* pvParameters){
   for(;;){
-    float speed = 0;
+    float speed=0;
     if(PS4.isConnected()){
-      if(PS4.L2() && PS4.R2()) speed = 0;
-      else if(PS4.L2()) speed = currentSpeedAccessory/40;
-      else if(PS4.R2()) speed = -currentSpeedAccessory/40;
+      if(PS4.L2() && PS4.R2()) speed=0;
+      else if(PS4.L2()) speed=currentSpeedAccessory/40;
+      else if(PS4.R2()) speed=-currentSpeedAccessory/40;
     }
-    setMotor(HG_PWM,HG_DIR,HG_CH,speed);
+    targetHG=speed;
+    currentHG=smoothSpeed(currentHG,targetHG);
+    setMotor(HG_PWM,HG_DIR,HG_CH,currentHG);
     vTaskDelay(20/portTICK_PERIOD_MS);
   }
 }
@@ -140,11 +169,11 @@ void setup(){
   setupMotor(HP_PWM,HP_DIR,HP_CH);
   setupMotor(HG_PWM,HG_DIR,HG_CH);
 
-  xTaskCreate(driveTask, "Drive", 2048, NULL, 1, NULL);
-  xTaskCreate(platformTask, "Platform", 2048, NULL, 1, NULL);
-  xTaskCreate(handVerticalTask, "HandVert", 2048, NULL, 1, NULL);
-  xTaskCreate(handForwardTask, "HandFwd", 2048, NULL, 1, NULL);
-  xTaskCreate(gripperTask, "Gripper", 2048, NULL, 1, NULL);
+  xTaskCreate(driveTask,"Drive",2048,NULL,1,NULL);
+  xTaskCreate(platformTask,"Platform",2048,NULL,1,NULL);
+  xTaskCreate(handVerticalTask,"HandVert",2048,NULL,1,NULL);
+  xTaskCreate(handForwardTask,"HandFwd",2048,NULL,1,NULL);
+  xTaskCreate(gripperTask,"Gripper",2048,NULL,1,NULL);
 }
 
 void loop(){}
