@@ -40,6 +40,7 @@ void setupMotor(int pwmPin, int dirPin, int channel){
 // --- モーター制御 ---
 void setMotor(int pwmPin, int dirPin, int channel, float speed, bool invert=false){
   if(invert) speed = -speed;
+
   // PWM制限
   if(speed > 255) speed = 255;
   if(speed < -255) speed = -255;
@@ -102,21 +103,22 @@ void handVerticalTask(void* pvParameters){
   }
 }
 
+// --- ハンド前後タスク（修正版） ---
 void handForwardTask(void* pvParameters){
   for(;;){
     float speed = 0;
 
     if(PS4.isConnected()){
-      int ry = PS4.RStickY();
-      if(abs(ry) > 20){  // デッドゾーンを広げる
-        speed = (float)ry / 127.0 * currentSpeedAccessory;
+      int ry = PS4.RStickY();   // 下=+127, 上=-128
+      if(abs(ry) > 20){         // デッドゾーン
+        // 符号を逆にして「上=正転 / 下=逆転」
+        speed = -(float)ry / 127.0f * currentSpeedAccessory;
       }
     }
 
-    // speed が 0 のときはモーター停止
     if(speed == 0){
-      ledcWrite(HP_CH, 0);  // PWMを完全に停止
-      digitalWrite(HP_DIR, LOW);
+      ledcWrite(HP_CH, 0);  
+      digitalWrite(HP_DIR, LOW);  // 停止
     } else {
       setMotor(HP_PWM, HP_DIR, HP_CH, speed, HP_INVERT);
     }
