@@ -9,13 +9,18 @@ int currentSpeedAccessory = 100;
 const int DEADZONE = 30;   // 広めのデッドゾーン
 
 // --- モーター用ピン ---
+// 足回り
 const int FL_PWM = 33, FL_DIR = 32, FL_CH = 0;
 const int FR_PWM = 12, FR_DIR = 14, FR_CH = 1;
 const int RL_PWM = 16, RL_DIR = 17, RL_CH = 2;
 const int RR_PWM = 5,  RR_DIR = 18, RR_CH = 3;
+// 土台
 const int FD_PWM = 26, FD_DIR = 19, FD_CH = 4;
-const int HL_PWM = 4, HL_DIR = 2, HL_CH = 5;
-const int HP_PWM = 21, HP_DIR = 25, HP_CH = 6;
+// ★ ハンド上下（元HPのピンに変更）
+const int HL_PWM = 21, HL_DIR = 25, HL_CH = 6;
+// ★ ハンド前後（元HLのピンに変更）
+const int HP_PWM = 4,  HP_DIR = 2,  HP_CH = 5;
+// グリッパー
 const int HG_PWM = 23, HG_DIR = 22, HG_CH = 7;
 
 // --- モーター反転フラグ ---
@@ -40,7 +45,6 @@ void setupMotor(int pwmPin, int dirPin, int channel){
 // --- モーター制御 ---
 void setMotor(int pwmPin, int dirPin, int channel, float speed, bool invert=false){
   if(invert) speed = -speed;
-
   // PWM制限
   if(speed > 255) speed = 255;
   if(speed < -255) speed = -255;
@@ -89,7 +93,7 @@ void platformTask(void* pvParameters){
   }
 }
 
-// --- ハンド上下タスク ---
+// --- ハンド上下タスク（Up / Downボタン） ---
 void handVerticalTask(void* pvParameters){
   for(;;){
     float speed = 0;
@@ -103,22 +107,20 @@ void handVerticalTask(void* pvParameters){
   }
 }
 
-// --- ハンド前後タスク（修正版） ---
+// --- ハンド前後タスク（R2 / L2ボタン制御） ---
 void handForwardTask(void* pvParameters){
   for(;;){
     float speed = 0;
 
     if(PS4.isConnected()){
-      int ry = PS4.RStickY();   // 下=+127, 上=-128
-      if(abs(ry) > 20){         // デッドゾーン
-        // 符号を逆にして「上=正転 / 下=逆転」
-        speed = -(float)ry / 127.0f * currentSpeedAccessory;
-      }
+      if(PS4.L2() && PS4.R2()) speed = 0;
+      else if(PS4.R2()) speed = currentSpeedAccessory;   // R2 → 正転
+      else if(PS4.L2()) speed = -currentSpeedAccessory;  // L2 → 逆転
     }
 
     if(speed == 0){
-      ledcWrite(HP_CH, 0);  
-      digitalWrite(HP_DIR, LOW);  // 停止
+      ledcWrite(HP_CH, 0);  // PWM完全停止
+      digitalWrite(HP_DIR, LOW);
     } else {
       setMotor(HP_PWM, HP_DIR, HP_CH, speed, HP_INVERT);
     }
