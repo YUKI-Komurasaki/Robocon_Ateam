@@ -4,7 +4,6 @@
 
 // --- 定数 ---
 const int BASE_SPEED_DRIVE = 128;
-const int DASH_INCREMENT = 64;
 int currentSpeedAccessory = 100;
 const int DEADZONE = 30;   // 広めのデッドゾーン
 
@@ -16,12 +15,12 @@ const int RL_PWM = 16, RL_DIR = 17, RL_CH = 2;
 const int RR_PWM = 5,  RR_DIR = 18, RR_CH = 3;
 // 土台
 const int FD_PWM = 26, FD_DIR = 19, FD_CH = 4;
-// ★ ハンド上下（元HPのピンに変更）
-const int HL_PWM = 21, HL_DIR = 25, HL_CH = 6;
-// ★ ハンド前後（元HLのピンに変更）
-const int HP_PWM = 4,  HP_DIR = 2,  HP_CH = 5;
-// グリッパー
-const int HG_PWM = 23, HG_DIR = 22, HG_CH = 7;
+// ハンド上下（Up / Downボタン）
+const int HL_PWM = 4, HL_DIR = 2, HL_CH = 6;
+// ハンド前後（Right / Leftボタン）
+const int HP_PWM = 23, HP_DIR = 22, HP_CH = 5;
+// グリッパー（L2 / R2）
+const int HG_PWM = 21, HG_DIR = 25, HG_CH = 7;
 
 // --- モーター反転フラグ ---
 const bool FL_INVERT = true;
@@ -45,7 +44,6 @@ void setupMotor(int pwmPin, int dirPin, int channel){
 // --- モーター制御 ---
 void setMotor(int pwmPin, int dirPin, int channel, float speed, bool invert=false){
   if(invert) speed = -speed;
-  // PWM制限
   if(speed > 255) speed = 255;
   if(speed < -255) speed = -255;
 
@@ -87,6 +85,8 @@ void platformTask(void* pvParameters){
       if(PS4.Triangle() && PS4.Cross()) speed = 0;
       else if(PS4.Triangle()) speed = currentSpeedAccessory;
       else if(PS4.Cross()) speed = -currentSpeedAccessory;
+    } else {
+      speed = 0;
     }
     setMotor(FD_PWM,FD_DIR,FD_CH,speed,FD_INVERT);
     vTaskDelay(20/portTICK_PERIOD_MS);
@@ -101,42 +101,47 @@ void handVerticalTask(void* pvParameters){
       if(PS4.Up() && PS4.Down()) speed = 0;
       else if(PS4.Up()) speed = -currentSpeedAccessory+60;
       else if(PS4.Down()) speed = currentSpeedAccessory-60;
+    } else {
+      speed = 0;
     }
     setMotor(HL_PWM,HL_DIR,HL_CH,speed);
     vTaskDelay(20/portTICK_PERIOD_MS);
   }
 }
 
-// --- ハンド前後タスク（R2 / L2ボタン制御） ---
+// --- ハンド前後タスク（Right / Leftボタン） ---
 void handForwardTask(void* pvParameters){
   for(;;){
     float speed = 0;
-
     if(PS4.isConnected()){
-      if(PS4.L2() && PS4.R2()) speed = 0;
-      else if(PS4.R2()) speed = currentSpeedAccessory;   // R2 → 正転
-      else if(PS4.L2()) speed = -currentSpeedAccessory;  // L2 → 逆転
+      if(PS4.Left() && PS4.Right()) speed = 0;
+      else if(PS4.Right()) speed = currentSpeedAccessory;
+      else if(PS4.Left()) speed = -currentSpeedAccessory;
+    } else {
+      speed = 0;
     }
 
     if(speed == 0){
-      ledcWrite(HP_CH, 0);  // PWM完全停止
+      ledcWrite(HP_CH, 0);
       digitalWrite(HP_DIR, LOW);
     } else {
       setMotor(HP_PWM, HP_DIR, HP_CH, speed, HP_INVERT);
     }
-
     vTaskDelay(20/portTICK_PERIOD_MS);
   }
 }
 
-// --- グリッパータスク ---
+// --- グリッパータスク（L2 / R2） ---
 void gripperTask(void* pvParameters){
+  const float GRIPPER_SPEED = currentSpeedAccessory*10; // PWM調整
   for(;;){
     float speed = 0;
     if(PS4.isConnected()){
       if(PS4.L2() && PS4.R2()) speed = 0;
-      else if(PS4.L2()) speed = currentSpeedAccessory/40;
-      else if(PS4.R2()) speed = -currentSpeedAccessory/40;
+      else if(PS4.L2()) speed = GRIPPER_SPEED;   // 正転
+      else if(PS4.R2()) speed = -GRIPPER_SPEED;  // 逆転
+    } else {
+      speed = 0;
     }
     setMotor(HG_PWM,HG_DIR,HG_CH,speed);
     vTaskDelay(20/portTICK_PERIOD_MS);
@@ -146,7 +151,7 @@ void gripperTask(void* pvParameters){
 // --- セットアップ ---
 void setup(){
   Serial.begin(115200);
-  PS4.begin("90:15:06:7c:3e:26");
+  PS4.begin("1a:2b:3c:01:01:02"); // コントローラーMACアドレス
   Serial.println("Ready.");
 
   setupMotor(FL_PWM,FL_DIR,FL_CH);
