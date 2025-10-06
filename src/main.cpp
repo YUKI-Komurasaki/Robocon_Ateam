@@ -14,9 +14,9 @@ const int FR_PWM = 12, FR_DIR = 14, FR_CH = 1;
 const int RL_PWM = 16, RL_DIR = 17, RL_CH = 2;
 const int RR_PWM = 5,  RR_DIR = 18, RR_CH = 3;
 
-// 土台（Cytron MD13S）※修正版
+// 土台（Cytron MD13S）
 const int FD_PWM = 26;
-const int FD_DIR = 27;   // ← GPIO19 → GPIO27 に変更
+const int FD_DIR = 27;
 const int FD_CH  = 4;
 
 // ハンド上下（Up / Downボタン）
