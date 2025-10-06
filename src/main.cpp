@@ -149,7 +149,7 @@ void handForwardTask(void* pvParameters) {
 
 // --- グリッパータスク（L2 / R2） ---
 void gripperTask(void* pvParameters) {
-  const float GRIPPER_SPEED = currentSpeedAccessory * 10; // PWM調整
+  const float GRIPPER_SPEED = currentSpeedAccessory; // PWM調整
   for (;;) {
     float speed = 0;
     if (PS4.isConnected()) {
