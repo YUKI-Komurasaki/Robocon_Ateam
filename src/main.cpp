@@ -15,16 +15,16 @@ const int RL_PWM = 16, RL_DIR = 17, RL_CH = 2;
 const int RR_PWM = 5,  RR_DIR = 18, RR_CH = 3;
 
 // 土台（Cytron MD13S）
-const int FD_PWM = 26;
-const int FD_DIR = 27;
+const int FD_PWM = 27;
+const int FD_DIR = 13;
 const int FD_CH  = 4;
 
 // ハンド上下（Up / Downボタン）
 const int HL_PWM = 4, HL_DIR = 2, HL_CH = 6;
 // ハンド前後（Right / Leftボタン）
-const int HP_PWM = 23, HP_DIR = 22, HP_CH = 5;
+const int HP_PWM = 21, HP_DIR = 26, HP_CH = 5;
 // グリッパー（L2 / R2）
-const int HG_PWM = 21, HG_DIR = 25, HG_CH = 7;
+const int HG_PWM = 23, HG_DIR = 22, HG_CH = 7;
 
 // --- モーター反転フラグ ---
 const bool FL_INVERT = true;
