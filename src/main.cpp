@@ -21,7 +21,7 @@ const int FD_CH  = 4;
 
 // ハンド上下（Up / Downボタン）
 const int HL_PWM = 4, HL_DIR = 2, HL_CH = 6;
-// ハンド前後（Right / Leftボタン）
+// ハンド前後（Rスティック上下）
 const int HP_PWM = 21, HP_DIR = 26, HP_CH = 5;
 // グリッパー（L2 / R2）
 const int HG_PWM = 23, HG_DIR = 22, HG_CH = 7;
@@ -31,11 +31,16 @@ const bool FL_INVERT = true;
 const bool FR_INVERT = false;
 const bool RL_INVERT = true;
 const bool RR_INVERT = false;
-const bool FD_INVERT = false;  // 必要に応じてtrueへ
+const bool FD_INVERT = false;  
 const bool HP_INVERT = false;
 
 // --- 足回りスピード ---
 int currentSpeedDrive = BASE_SPEED_DRIVE;
+
+// --- 速度切替用 ---
+const int DRIVE_SPEED_NORMAL = 64;
+const int DRIVE_SPEED_HIGH   = 128;
+bool isHighSpeedMode = false;
 
 // --- モーター初期化 ---
 void setupMotor(int pwmPin, int dirPin, int channel) {
@@ -79,6 +84,8 @@ void driveTask(void* pvParameters) {
       fr = (vy - vx - vr) * currentSpeedDrive;
       rl = (vy - vx + vr) * currentSpeedDrive;
       rr = (vy + vx - vr) * currentSpeedDrive;
+    } else {
+      fl = fr = rl = rr = 0;  // PS4切断時は停止
     }
 
     setMotor(FL_PWM, FL_DIR, FL_CH, fl, FL_INVERT);
@@ -90,7 +97,7 @@ void driveTask(void* pvParameters) {
   }
 }
 
-// --- 土台上下タスク（修正版） ---
+// --- 土台上下タスク ---
 void platformTask(void* pvParameters) {
   for (;;) {
     float speed = 0;
@@ -99,7 +106,7 @@ void platformTask(void* pvParameters) {
       if (PS4.Triangle() && PS4.Cross()) speed = 0;
       else if (PS4.Triangle()) speed = currentSpeedAccessory;
       else if (PS4.Cross()) speed = -currentSpeedAccessory;
-      else speed = 0;  // ← 未入力時は確実に停止
+      else speed = 0;
     } else {
       speed = 0;
     }
@@ -109,7 +116,7 @@ void platformTask(void* pvParameters) {
   }
 }
 
-// --- ハンド上下タスク（Up / Downボタン） ---
+// --- ハンド上下タスク ---
 void handVerticalTask(void* pvParameters) {
   for (;;) {
     float speed = 0;
@@ -125,14 +132,15 @@ void handVerticalTask(void* pvParameters) {
   }
 }
 
-// --- ハンド前後タスク（Right / Leftボタン） ---
+// --- ハンド前後タスク（Rスティック上下） ---
 void handForwardTask(void* pvParameters) {
   for (;;) {
     float speed = 0;
+
     if (PS4.isConnected()) {
-      if (PS4.Left() && PS4.Right()) speed = 0;
-      else if (PS4.Right()) speed = currentSpeedAccessory;
-      else if (PS4.Left()) speed = -currentSpeedAccessory;
+      int y = -PS4.RStickY();
+      if (abs(y) < DEADZONE) y = 0;
+      speed = (y / 128.0) * currentSpeedAccessory;
     } else {
       speed = 0;
     }
@@ -143,13 +151,14 @@ void handForwardTask(void* pvParameters) {
     } else {
       setMotor(HP_PWM, HP_DIR, HP_CH, speed, HP_INVERT);
     }
+
     vTaskDelay(20 / portTICK_PERIOD_MS);
   }
 }
 
-// --- グリッパータスク（L2 / R2） ---
+// --- グリッパータスク ---
 void gripperTask(void* pvParameters) {
-  const float GRIPPER_SPEED = currentSpeedAccessory; // PWM調整
+  const float GRIPPER_SPEED = currentSpeedAccessory;
   for (;;) {
     float speed = 0;
     if (PS4.isConnected()) {
@@ -164,10 +173,30 @@ void gripperTask(void* pvParameters) {
   }
 }
 
+// --- L3ボタンで速度切替タスク ---
+void speedModeTask(void* pvParameters) {
+  bool prevL3 = false;
+
+  for (;;) {
+    if (PS4.isConnected()) {
+      bool nowL3 = PS4.L3();
+
+      if (nowL3 && !prevL3) {
+        isHighSpeedMode = !isHighSpeedMode;
+        currentSpeedDrive = isHighSpeedMode ? DRIVE_SPEED_HIGH : DRIVE_SPEED_NORMAL;
+        Serial.printf("[MODE] Drive speed: %s\n", 
+                      isHighSpeedMode ? "HIGH" : "NORMAL");
+      }
+      prevL3 = nowL3;
+    }
+    vTaskDelay(50 / portTICK_PERIOD_MS);
+  }
+}
+
 // --- セットアップ ---
 void setup() {
   Serial.begin(115200);
-  PS4.begin("1a:2b:3c:01:01:02"); // PS4コントローラのMACアドレス
+  PS4.begin("1a:2b:3c:01:01:02"); 
   Serial.println("Ready.");
 
   // モーター初期化
@@ -180,12 +209,13 @@ void setup() {
   setupMotor(HP_PWM, HP_DIR, HP_CH);
   setupMotor(HG_PWM, HG_DIR, HG_CH);
 
-  // 各タスク起動
+  // タスク起動
   xTaskCreate(driveTask, "Drive", 2048, NULL, 1, NULL);
   xTaskCreate(platformTask, "Platform", 2048, NULL, 1, NULL);
   xTaskCreate(handVerticalTask, "HandVert", 2048, NULL, 1, NULL);
   xTaskCreate(handForwardTask, "HandFwd", 2048, NULL, 1, NULL);
   xTaskCreate(gripperTask, "Gripper", 2048, NULL, 1, NULL);
+  xTaskCreate(speedModeTask, "SpeedMode", 2048, NULL, 1, NULL);
 }
 
 void loop() {}
