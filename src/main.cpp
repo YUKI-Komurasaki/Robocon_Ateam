@@ -181,7 +181,7 @@ void speedSwitchTask(void* pvParameters) {
 // --- セットアップ ---
 void setup() {
   Serial.begin(115200);
-  PS4.begin("1a:2b:3c:01:01:02");
+  PS4.begin("90:15:06:7c:3d:ca");
   Serial.println("Ready.");
 
   setupMotor(FL_PWM, FL_DIR, FL_CH);
