@@ -25,7 +25,7 @@ const bool FR_INVERT = false;
 const bool RL_INVERT = true;
 const bool RR_INVERT = false;
 const bool FD_INVERT = false;
-const bool HP_INVERT = false;
+const bool HP_INVERT = true;
 
 // --- グローバル状態 ---
 int currentSpeedDrive = BASE_SPEED_DRIVE;
