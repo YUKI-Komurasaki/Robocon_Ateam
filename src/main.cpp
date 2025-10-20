@@ -128,8 +128,8 @@ void handVerticalTask(void* pvParameters) {
     float speed = 0;
     if (PS4.isConnected()) {
       if (PS4.Up() && PS4.Down()) speed = 0;
-      else if (PS4.Up()) speed = -currentSpeedAccessory + 60;
-      else if (PS4.Down()) speed = currentSpeedAccessory - 60;
+      else if (PS4.Up()) speed = -currentSpeedAccessory + 20;
+      else if (PS4.Down()) speed = currentSpeedAccessory - 20;
     }
     setMotor(HL_PWM, HL_DIR, HL_CH, speed);
     vTaskDelay(20 / portTICK_PERIOD_MS);
